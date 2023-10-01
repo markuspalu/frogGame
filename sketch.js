@@ -1,39 +1,38 @@
 let frog;
 let water;
 let fountain;
+let fly;
+let croc;
+let tounge;
+let floor1, floor2, floor3;
+let bottomFloor;
+let rightFloor;
+let leftFloor;
+
+let flies;
+let floors;
+
 let frogIdle;
 let frogJump;
-let floors; 
-let flies;
-let floor1, floor2, floor3;
-let tounge;
-let toungeX;
-let toungeY;
+let flyAni;
+let crocAni;
+
 let toungeDir = 1;
 let scaler = 20;
 let spaceScaler = 0;
 let spaceW = 0;
 
-let fly;
-let croc;
-
 let flyCount = 0;
-let canSpawn = true;
 
+let canSpawn = true;
 let isToungeOut = false;
+let isGameOver = false;
 
 let flyX;
 let flyY;
 
-let frogVelY
-
-let x;
-let y;
-
-let flyAni;
-let crocAni;
-
-let isGameOver = false;
+let flyMoveX;
+let flyMoveY;
 
 function preload() {
   backgroundImage = loadImage('assets/swamp.png');
@@ -48,6 +47,17 @@ function printLevel(lvlNr) {
   text(`Level ${lvlNr}`, 250, 30);
 }
 
+async function gameOver(input) {
+  textSize(20);
+  fill(255)
+  textAlign(CENTER, CENTER);
+  textFont(fontPixel);
+  text(input, 250, 250);
+  // Restart
+  await delay(2000);
+  window.location.reload()
+}
+
 function spawnFly(count) {
     for (let i = 0; i < count; i++) {
       flyX = random(10, 490);
@@ -55,16 +65,6 @@ function spawnFly(count) {
       fly = new flies.Sprite(flyX, flyY, 4);
     }
     canSpawn = false;
-}
-
-async function gameOver(input) {
-  textSize(20);
-  fill(255)
-  textAlign(CENTER, CENTER);
-  textFont(fontPixel);
-  text(input, 250, 250);
-  await delay(2000);
-  window.location.reload()
 }
 
 async function sequence() {
@@ -136,16 +136,15 @@ function setup() {
 
   strokeWeight(3)
   floors = new Group();
-  let bottomFloor = new floors.Sprite(250, 505, 500, 1, 's');
-  let rightFloor = new floors.Sprite(501, 0, 1, 1000, 's');
-  let leftFloor = new floors.Sprite(-1, 0, 1, 1000, 's');
-  rightFloor.overlaps(water)
-  leftFloor.overlaps(water)
+  floors.color = "#006400"
+
+  bottomFloor = new floors.Sprite(250, 505, 500, 1, 's');
+  rightFloor = new floors.Sprite(501, 0, 1, 1000, 's');
+  leftFloor = new floors.Sprite(-1, 0, 1, 1000, 's');
+
   floor1 = new floors.Sprite(100, 320, 60, 20);
   floor2 = new floors.Sprite(250, 320, 60, 20);
   floor3 = new floors.Sprite(400, 320, 60, 20);
-
-  floors.color = "#006400"
 
   tounge = new Sprite();
   tounge.strokeWeight = 0;
@@ -154,37 +153,36 @@ function setup() {
   tounge.color = "red";
 
   frog = new Sprite(250, 300);
-  frogJump = frog.addAni('frogJump', 'assets/frogJump.png', { frameSize: [768/8, 96], frames: 8});
-  frogIdle = frog.addAni('frogIdle', 'assets/frogIdle.png', { frameSize: [96, 96], frames: 2 });
-  frogIdle.frameDelay = 10;
   frog.scale = 0.5;
 
-	crocAni = loadAnimation('assets/alligator.png', { frameSize: [592, 186], frames: 15 });
+  frogJump = frog.addAni('frogJump', 'assets/frogJump.png', { frameSize: [768/8, 96], frames: 8});
 
+  frogIdle = frog.addAni('frogIdle', 'assets/frogIdle.png', { frameSize: [96, 96], frames: 2 });
+  frogIdle.frameDelay = 10;
+
+	crocAni = loadAnimation('assets/alligator.png', { frameSize: [592, 186], frames: 15 });
   crocAni.frameDelay = 4;
 
   croc = new Sprite(250, 420, 'n');
   croc.addAni("swim", crocAni);
   croc.ani.play()
-  croc.rotation  = 0;
   croc.scale = 0.3;
   croc.removeColliders()
   croc.addCollider(0, 0, 120, 35)
 
   world.gravity.y = 10;
-
   sequence()
 }
 
 
 function draw() {
-	clear()
 
   background(backgroundImage)
 
   water.rotation = 0;
-  floors.rotation = 0;
   tounge.rotation = 0;
+  croc.rotation = 0;
+  floors.rotation = 0;
   floors.vel.x = 0;
 
   if (frog.ani.name === 'frogJump' && frog.vel.y === 0) {
@@ -197,7 +195,6 @@ function draw() {
     frog.vel.y = -5;
   }
   
-
    if (frog.colliding(floors) === 0 && frog.colliding(water) === 0) {
      if (kb.pressing('left')) {
       toungeDir = -1;
@@ -251,15 +248,17 @@ function draw() {
    frog.overlaps(flies);
    frog.overlaps(water);
    croc.overlaps(water)
+   rightFloor.overlaps(water)
+   leftFloor.overlaps(water);
 
   flies.forEach(fly => {
     fly.rotation = 0;
 
     let value = map(fly.y, 0, 500, 6, -6)
-    y = random(-5+value, 5+value);
-    x = random(-5, 5)
-	  fly.vel.x = x;
-    fly.vel.y = y;
+    flyMoveY = random(-5+value, 5+value);
+    flyMoveX = random(-5, 5)
+	  fly.vel.x = flyMoveX;
+    fly.vel.y = flyMoveY;
 
     let distance = dist(frog.x, frog.y, fly.x, fly.y);
     if (distance < 80) {
